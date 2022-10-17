@@ -1,0 +1,46 @@
+{
+    "name": "varobj/sqltrace-laravel",
+    "type": "project",
+    "description": "The Laravel Framework's sql trace",
+    "keywords": [
+        "framework",
+        "laravel",
+        "sqltrace"
+    ],
+    "license": "MIT",
+    "require": {
+        "php": "^7.2",
+        "symfony/polyfill-uuid": "^1.13",
+        "guzzlehttp/guzzle": "^6.4",
+        "ext-json": "*"
+    },
+    "require-dev": {
+        "roave/security-advisories": "dev-latest",
+        "laravel/framework": "^6.0"
+    },
+    "suggest": {
+        "monolog/monolog": "Allow log with context"
+    },
+    "autoload": {
+        "psr-4": {
+            "SQLTrace\\": "src/"
+        }
+    },
+    "minimum-stability": "dev",
+    "repositories": {
+        "packagist": {
+            "type": "composer",
+            "url": "https://mirrors.aliyun.com/composer/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "SQLTrace\\ServiceProvider"
+            ],
+            "aliases": {
+                "SQLTrace": "SQLTrace\\Facade"
+            }
+        }
+    }
+}
