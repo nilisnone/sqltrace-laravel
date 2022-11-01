@@ -12,7 +12,7 @@ PHP version >= 7.2
 ## 安装
 
 ```
-composer require --dev nilisnone/laravel-sqltrace dev-master
+composer require --dev nilisnone/sqltrace-laravel dev-master
 ```
 
 ## 使用
