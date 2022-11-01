@@ -1,11 +1,13 @@
 {
-    "name": "varobj/sqltrace-laravel",
+    "name": "nilisnone/sqltrace-laravel",
     "type": "project",
     "description": "The Laravel Framework's sql trace",
     "keywords": [
         "framework",
         "laravel",
-        "sqltrace"
+        "sqltrace",
+        "sqldebug",
+        "debuger"
     ],
     "license": "MIT",
     "require": {
@@ -27,12 +29,6 @@
         }
     },
     "minimum-stability": "dev",
-    "repositories": {
-        "packagist": {
-            "type": "composer",
-            "url": "https://mirrors.aliyun.com/composer/"
-        }
-    },
     "extra": {
         "laravel": {
             "providers": [

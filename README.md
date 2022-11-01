@@ -12,17 +12,20 @@ PHP version >= 7.2
 ## 安装
 
 ```
-composer require --dev varobj/laravel-sqltrace dev-master
+composer require --dev nilisnone/laravel-sqltrace dev-master
 ```
 
 ## 使用
 
-1. 编辑项目的文件 `app/Providers/EventServiceProvider.php`
-
-`$listen` 数组中添加下面一行
+1. 编辑 .env
 
 ```
-\Illuminate\Database\Events\QueryExecuted::class => [ \LaravelSQLTrace\SQLTraceEventListener::class, ],
+# 目前是true，后续可能修改为远程上传数据地址
+SQL_TRACE_DSN=true
+# 记录请求参数
+SQL_TRACE_ENABLE_PARAMS_LOG=true
+# 本地sql日志保存位置
+SQL_TRACE_LOG_FILE=/tmp/app-sql.log
 ```
 
 2. 变更文件不提交到服务器
@@ -38,6 +41,3 @@ git update-index --skip-worktree app/Providers/EventServiceProvider.php
 git update-index --no-skip-worktree composer.json
 git update-index --no-skip-worktree app/Providers/EventServiceProvider.php
 ```
-
-
-## 日志默认记录到 /tmp/sql.log
