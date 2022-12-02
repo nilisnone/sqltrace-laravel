@@ -18,9 +18,16 @@ class TraceAppSchema
 
     protected $trace_sql = [];
 
-    public function __construct()
+    private $config;
+
+    public function __construct(array $config)
     {
-        $this->app_uuid = Utils::static_uuid();
+        $this->config = $config;
+        if (!empty($this->config['app_uuid_variable']) && !empty($_SERVER[$this->config['app_uuid_variable']])) {
+            $this->app_uuid = $_SERVER[$this->config['app_uuid_variable']] . '-sql';
+        } else {
+            $this->app_uuid = Utils::static_uuid();
+        }
         $this->app_name = config('app.name', 'default') ?? 'no-app-name';
         $this->run_host = gethostname();
         $this->run_mode = PHP_SAPI;
@@ -50,10 +57,10 @@ class TraceAppSchema
      * @param QueryExecuted $event
      * @return TraceAppSchema|null
      */
-    public static function create(QueryExecuted $event): ?TraceAppSchema
+    public static function create(QueryExecuted $event, array $config): ?TraceAppSchema
     {
         if (null === static::$instance) {
-            static::$instance = new TraceAppSchema();
+            static::$instance = new TraceAppSchema($config);
             Log::getInstance()->info('trace-app', static::$instance->toArray());
         }
         $sql = TraceSqlSchema::create(

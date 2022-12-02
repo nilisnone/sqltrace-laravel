@@ -12,6 +12,8 @@ class EventHandler
      */
     private $events;
 
+    private $config;
+
     /**
      * EventHandler constructor.
      *
@@ -21,6 +23,7 @@ class EventHandler
     public function __construct(Dispatcher $events, array $config)
     {
         $this->events = $events;
+        $this->config = $config;
     }
 
     public function subscribe(): void
@@ -30,6 +33,6 @@ class EventHandler
 
     public function queryExecuted(QueryExecuted $query): void
     {
-        TraceAppSchema::create($query);
+        TraceAppSchema::create($query, $this->config);
     }
 }
