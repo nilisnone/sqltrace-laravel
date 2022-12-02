@@ -37,7 +37,8 @@ class TraceAppSchema
             $this->referer = $_SERVER['HTTP_REFERER'] ?? '';
         }
         $this->request_query = json_encode($_GET);
-        $this->request_post = file_get_contents('php://input');
+        $this->request_post = 'content-type: ' . ($_SERVER['CONTENT_TYPE'] ?? '');
+        $this->request_post .= ' / ' . (file_get_contents('php://input') ?: json_encode($_POST));
     }
 
     /**
