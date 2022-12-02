@@ -31,7 +31,7 @@ class SQLTraceEventListener
         'enable_log' => false,
         'enable_analytic' => '',
         'enable_params_log' => false,
-        'dsn' => '', // must
+        'dsn' => '',
         'ignore_folder' => null,
         'redis_host' => '',
         'redis_port' => '',

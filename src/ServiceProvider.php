@@ -21,7 +21,7 @@ class ServiceProvider extends IlluminateServiceProvider
     {
         $this->app->make(static::$abstract);
 
-        if ($this->hasDsnSet()) {
+        if ($this->enable()) {
             $this->bindEvents();
         }
     }
@@ -74,4 +74,12 @@ class ServiceProvider extends IlluminateServiceProvider
     {
         return [static::$abstract];
     }
+
+    public function enable(): bool
+    {
+        $config = $this->getUserConfig();
+
+        return !empty($config['enable']);
+    }
+
 }
