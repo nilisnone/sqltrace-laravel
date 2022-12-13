@@ -27,7 +27,7 @@ class Log
             $path = pathinfo($logfile);
             $baseFile = ($path['dirname'] ?? '') . DIRECTORY_SEPARATOR . ($path['filename'] ?? '');
             $logfile = $baseFile . '.' . date('Ymd') . '.log';
-            $traceFile = $baseFile . '-trace' . date('Ymd') . '.log';
+            $traceFile = $baseFile . '.trace.' . date('Ymd') . '.log';
             if (!$logfile) {
                 file_put_contents($logfile, '', FILE_APPEND);
             }

@@ -2,6 +2,7 @@
 
 namespace SQLTrace;
 
+use phpDocumentor\Reflection\Types\True_;
 use SplFileObject;
 use Exception;
 
@@ -22,7 +23,7 @@ class TraceContextSchema
                 'pre_context' => $source_code['pre_context'],
                 'context_line' => $source_code['context_line'],
                 'post_context' => $source_code['post_context'],
-            ]);
+            ], true);
         }
 
         return $context;
