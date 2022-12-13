@@ -83,7 +83,7 @@ class Log
         $context['@timestamp'] = date('Y-m-d H:i:s') . strstr(microtime(true), '.');
         if ($debug) {
             if ($this->traceLog) {
-            fwrite($this->log, TraceContextSchema::renderHtml($context) . PHP_EOL);
+                fwrite($this->traceLog, TraceContextSchema::renderHtml($context) . PHP_EOL);
             }
         } else if ($this->log) {
             fwrite($this->log, json_encode($context) . PHP_EOL);
