@@ -14,8 +14,6 @@ class TraceSqlSchema
     protected $run_ms;
     protected $biz_created_at;
 
-    protected $trace_context = [];
-
     /**
      * @param string $app_uuid
      * @param QueryExecuted $event
@@ -49,7 +47,7 @@ class TraceSqlSchema
 
         if (Container::getInstance()['config']['SQLTrace']['enable_backtrace']) {
             $logback = $this->format_traces(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS));
-            $this->trace_context = TraceContextSchema::create($this->sql_uuid, $logback)->toArray();
+            TraceContextSchema::create($this->sql_uuid, $logback);
         }
     }
 
@@ -80,7 +78,6 @@ class TraceSqlSchema
             'db_host' => $this->db_host,
             'run_ms' => $this->run_ms,
             'biz_created_at' => $this->biz_created_at,
-            'trace_context' => $this->trace_context
         ];
     }
 }

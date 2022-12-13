@@ -6,13 +6,13 @@
 
 Laravel 版本 >= 6
 
-PHP version >= 7.2
+PHP version >= 7.4
 
 
 ## 安装
 
 ```
-composer require --dev nilisnone/sqltrace-laravel dev-master
+composer require --dev nilisnone/sqltrace-laravel 1.*
 ```
 
 ## 使用
@@ -20,24 +20,6 @@ composer require --dev nilisnone/sqltrace-laravel dev-master
 1. 编辑 .env
 
 ```
-# 目前是true，后续可能修改为远程上传数据地址
-SQL_TRACE_DSN=true
-# 记录请求参数
-SQL_TRACE_ENABLE_PARAMS_LOG=true
-# 本地sql日志保存位置
-SQL_TRACE_LOG_FILE=/tmp/app-sql.log
-```
-
-2. 变更文件不提交到服务器
-
-```
-git update-index --skip-worktree composer.json
-git update-index --skip-worktree app/Providers/EventServiceProvider.php
-```
-
-3. 变更文件和线上冲突时，撤回忽略
-
-```
-git update-index --no-skip-worktree composer.json
-git update-index --no-skip-worktree app/Providers/EventServiceProvider.php
+SOI_ENABLE=true
+SOI_LOG_FILE=/tmp/sql.log
 ```

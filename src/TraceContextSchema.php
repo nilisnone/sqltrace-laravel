@@ -14,7 +14,7 @@ class TraceContextSchema
         $context = new self();
         foreach ($traces as $trace) {
             $source_code = $context->getSourceCode($trace['file'] ?? '', $trace['line'] ?? 0);
-            $context->addContext([
+            Log::getInstance()->info('trace-context',[
                 'sql_uuid' => $sql_uuid,
                 'file' => $trace['file'] ?? '',
                 'line' => $trace['line'] ?? '',
@@ -26,11 +26,6 @@ class TraceContextSchema
         }
 
         return $context;
-    }
-
-    protected function addContext(array $context): void
-    {
-        $this->context[] = $context;
     }
 
     protected function getSourceCode(string $path, int $lineNumber): array
@@ -80,10 +75,5 @@ class TraceContextSchema
         }
 
         return $frame;
-    }
-
-    public function toArray(): array
-    {
-        return $this->context;
     }
 }

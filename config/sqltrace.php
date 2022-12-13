@@ -4,7 +4,7 @@ return [
     /**
      * 是否开启功能
      */
-    'enable' => env('SOI_ENABLE', true),
+    'enable' => env('SOI_ENABLE', false),
     /**
      * 是否开启分析统计模式
      */

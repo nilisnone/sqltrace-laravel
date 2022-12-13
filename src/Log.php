@@ -17,19 +17,30 @@ class Log
     }
 
     public $log;
+    public $traceLog;
 
     public function __construct()
     {
         $logfile = Container::getInstance()['config']['SQLTrace']['log_file'];
+        $enableTrace = Container::getInstance()['config']['SQLTrace']['enable_backtrace'];
         if ($logfile) {
             $path = pathinfo($logfile);
-            $logfile = ($path['dirname'] ?? '') . DIRECTORY_SEPARATOR . ($path['filename'] ?? '');
-            $logfile .= '.' . date('Ymd') . '.log';
+            $baseFile = ($path['dirname'] ?? '') . DIRECTORY_SEPARATOR . ($path['filename'] ?? '');
+            $logfile = $baseFile . '.' . date('Ymd') . '.log';
+            $traceFile = $baseFile . '-trace' . date('Ymd') . '.log';
             if (!$logfile) {
                 file_put_contents($logfile, '', FILE_APPEND);
             }
             if ($logfile) {
                 $this->log = @fopen($logfile, 'ab+');
+            }
+            if ($enableTrace) {
+                if (!$traceFile) {
+                    file_put_contents($traceFile, '', FILE_APPEND);
+                }
+                if ($traceFile) {
+                    $this->traceLog = @fopen($traceFile, 'ab+');
+                }
             }
         }
     }
@@ -54,23 +65,27 @@ class Log
         return preg_replace('/(\d+)$/', $request_id_seq, static::$reqId);
     }
 
-    protected static function getDefaultContext(array &$context, int $logOffset = 0): void
+    protected static function getDefaultContext(array &$context): void
     {
         $context['@req_id'] = static::getReqId();
-        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2 + $logOffset);
-        $context['@file'] = sprintf(
+        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 4);
+        $context['@may_file'] = sprintf(
             '%s@%d',
-            $trace[1 + $logOffset]['file'] ?? '',
-            $trace[1 + $logOffset]['line'] ?? ''
+            $trace[1]['file'] ?? '',
+            $trace[1]['line'] ?? ''
         );
     }
 
-    public function info(string $msg, array $context = [], int $logOffset = 0): void
+    public function info(string $msg, array $context = [], bool $debug = false): void
     {
-        static::getDefaultContext($context, $logOffset);
+        static::getDefaultContext($context);
         $context['msg'] = $msg;
         $context['@timestamp'] = date('Y-m-d H:i:s') . strstr(microtime(true), '.');
-        if ($this->log) {
+        if ($debug) {
+            if ($this->traceLog) {
+                fwrite($this->log, json_encode($context) . PHP_EOL);
+            }
+        } else if ($this->log) {
             fwrite($this->log, json_encode($context) . PHP_EOL);
         }
     }
