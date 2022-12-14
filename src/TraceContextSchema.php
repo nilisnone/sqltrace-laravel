@@ -20,29 +20,11 @@ class TraceContextSchema
                 'file' => $trace['file'] ?? '',
                 'line' => $trace['line'] ?? '',
                 'class' => $trace['class'] ?? '',
-                'pre_context' => $source_code['pre_context'],
                 'context_line' => $source_code['context_line'],
-                'post_context' => $source_code['post_context'],
             ], true);
         }
 
         return $context;
-    }
-
-    public static function renderHtml(array $context)
-    {
-        $html = sprintf('<b>%s</b><br>file=%s@%d<br>class=%s<br><br>', 
-            $context['sql_uuid'], $context['file'], $context['line'], $context['class']);
-        $html .= '<br>```';
-        foreach($context['pre_context'] as $v) {
-            $html .= $v . '<br>';
-        }
-        $html .= $context['context_line'] . '<br>';
-        foreach($context['post_context'] as $v) {
-            $html .= $v . '<br>';
-        }
-        $html .= '```<br>';
-        return $html;
     }
 
     protected function getSourceCode(string $path, int $lineNumber): array
@@ -71,7 +53,7 @@ class TraceContextSchema
 
             while (!$file->eof()) {
                 $line = $file->current();
-                $line = rtrim($line, "\r\n");
+                $line = str_replace(["\r\n", "\r", "\n"], "", $line);
 
                 if ($currentLineNumber === $lineNumber) {
                     $frame['context_line'] = $line;

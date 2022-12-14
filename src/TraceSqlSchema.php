@@ -23,7 +23,9 @@ class TraceSqlSchema
     public static function create(string $app_uuid, QueryExecuted $event): TraceSqlSchema
     {
         $trace_sql = new TraceSqlSchema($app_uuid, $event);
-        Log::getInstance()->info('trace-sql', $trace_sql->toArray());
+        $context = $trace_sql->toArray();
+        static::getDefaultContext($context);
+        Log::getInstance()->info('trace-sql', $context);
         return $trace_sql;
     }
 
@@ -49,6 +51,15 @@ class TraceSqlSchema
             $logback = $this->format_traces(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS));
             TraceContextSchema::create($this->sql_uuid, $logback);
         }
+    }
+    protected static function getDefaultContext(array &$context): void
+    {
+        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 4);
+        $context['_may_file'] = sprintf(
+            '%s@%d',
+            $trace[1]['file'] ?? '',
+            $trace[1]['line'] ?? ''
+        );
     }
 
     protected function format_traces(array $traces): array

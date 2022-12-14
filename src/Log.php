@@ -65,25 +65,14 @@ class Log
         return preg_replace('/(\d+)$/', $request_id_seq, static::$reqId);
     }
 
-    protected static function getDefaultContext(array &$context): void
-    {
-        $context['@req_id'] = static::getReqId();
-        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 4);
-        $context['@may_file'] = sprintf(
-            '%s@%d',
-            $trace[1]['file'] ?? '',
-            $trace[1]['line'] ?? ''
-        );
-    }
-
     public function info(string $msg, array $context = [], bool $debug = false): void
     {
-        static::getDefaultContext($context);
         $context['msg'] = $msg;
-        $context['@timestamp'] = date('Y-m-d H:i:s') . strstr(microtime(true), '.');
+        $context['_req_id'] = static::getReqId();
+        $context['_timestamp'] = date('Y-m-d H:i:s') . strstr(microtime(true), '.');
         if ($debug) {
             if ($this->traceLog) {
-                fwrite($this->traceLog, TraceContextSchema::renderHtml($context) . PHP_EOL);
+                fwrite($this->traceLog, json_encode($context) . PHP_EOL);
             }
         } else if ($this->log) {
             fwrite($this->log, json_encode($context) . PHP_EOL);
