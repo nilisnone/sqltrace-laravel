@@ -54,7 +54,7 @@ class TraceSqlSchema
     }
     protected static function getDefaultContext(array &$context): void
     {
-        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 4);
+        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 7);
         $context['_may_file'] = sprintf(
             '%s@%d',
             $trace[1]['file'] ?? '',
