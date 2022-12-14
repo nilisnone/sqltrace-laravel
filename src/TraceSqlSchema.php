@@ -54,12 +54,22 @@ class TraceSqlSchema
     }
     protected static function getDefaultContext(array &$context): void
     {
-        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 7);
-        $context['_may_file'] = sprintf(
-            '%s@%d',
-            $trace[1]['file'] ?? '',
-            $trace[1]['line'] ?? ''
-        );
+        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 30);
+        foreach ($trace as $v) {
+            $file = $v['file'] ?? '';
+            if (!$file) {
+                continue;
+            }
+            if (strpos($file, 'vendor') !== false) {
+                continue;
+            }
+            $context['call_sql_position'] = sprintf(
+                '%s@%d',
+                $v['file'] ?? '',
+                $v['line'] ?? ''
+            );
+            return;
+        }
     }
 
     protected function format_traces(array $traces): array
