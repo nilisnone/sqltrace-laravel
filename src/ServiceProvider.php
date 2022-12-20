@@ -47,18 +47,6 @@ class ServiceProvider extends IlluminateServiceProvider
     }
 
     /**
-     * Check if a DSN was set in the config.
-     *
-     * @return bool
-     */
-    protected function hasDsnSet(): bool
-    {
-        $config = $this->getUserConfig();
-
-        return !empty($config['dsn']);
-    }
-
-    /**
      * Retrieve the user configuration.
      *
      * @return array
