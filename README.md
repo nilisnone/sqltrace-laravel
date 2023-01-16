@@ -25,3 +25,17 @@ php artisan package:discover
 SOI_ENABLE=true
 SOI_LOG_FILE=/tmp/sql.log
 ```
+
+2. 其他参数
+
+### SOI_ENABLE_BACKTRACE
+
+是否开启trace日志，默认 false， 如果开启，会额外新增一个 .trace.{Ymd}.log 文件
+
+### SOI_MAX_CONTEXT_LINE
+
+最多记录源码行数，默认 0，如果大于 0，会记录请求时源码位置
+
+### SOI_UID_VARIABLE
+
+app_uuid 使用 $_SERVER 中的 key 值，默认空，随机生成

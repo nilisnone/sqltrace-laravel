@@ -7,6 +7,9 @@ use Illuminate\Container\Container;
 class Log
 {
     protected static $instance;
+    public $log;
+    public $traceLog;
+    protected static $reqId;
 
     public static function getInstance(): Log
     {
@@ -15,9 +18,6 @@ class Log
         }
         return static::$instance;
     }
-
-    public $log;
-    public $traceLog;
 
     public function __construct()
     {
@@ -44,8 +44,6 @@ class Log
             }
         }
     }
-
-    protected static $reqId;
 
     public static function getReqId(): string
     {
