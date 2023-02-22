@@ -40,7 +40,11 @@ class TraceSqlSchema
         $this->db_host = $event->connection->getConfig('host');
         $sql = $event->sql;
         foreach ($event->bindings as $binding) {
-            $value = is_numeric($binding) ? $binding : "'" . $binding . "'";
+            if (is_string($binding)) {
+                $value = "'" . $binding . "'";
+            } else {
+                $value = $binding;
+            }
             $sql = preg_replace('/\?/', $value, $sql, 1);
         }
         $this->trace_sql = $sql;
