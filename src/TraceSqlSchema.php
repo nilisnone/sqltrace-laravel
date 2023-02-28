@@ -37,7 +37,8 @@ class TraceSqlSchema
     {
         $this->app_uuid = $app_uuid;
         $this->sql_uuid = Utils::uuid();
-        $this->db_host = $event->connection->getConfig('host');
+        $conf = $event->connection->getConfig();
+        $this->db_host = sprintf("%s:%%s@tcp(%s:%s)/%s", $conf['username'], $conf['host'], $conf['port'], $conf['database']);
         $sql = $event->sql;
         foreach ($event->bindings as $binding) {
             if (is_string($binding)) {
