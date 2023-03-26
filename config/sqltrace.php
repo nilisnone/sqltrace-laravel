@@ -20,5 +20,9 @@ return [
     /**
      * app_uuid使用$_SERVER中的变量
      */
-    'app_uuid_variable' => env('SOI_UID_VARIABLE', '')
+    'app_uuid_variable' => env('SOI_UID_VARIABLE', ''),
+    /**
+     * db_alias
+     */
+    'db_alias' => env('SOI_DB_ALIAS', 'default'),
 ];
