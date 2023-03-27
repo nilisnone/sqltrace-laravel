@@ -41,7 +41,16 @@ class TraceSqlSchema
         $this->db_host = sprintf("%s:%%s@tcp(%s:%s)/%s", $conf['username'], $conf['host'], $conf['port'], $conf['database']);
         $sql = $event->sql;
         foreach ($event->bindings as $binding) {
-            if (is_string($binding)) {
+            if (is_object($binding)) {
+                $binding = (string)$binding;
+                if (is_numeric($binding)) {
+                    $value = $binding;
+                } elseif (is_string($binding)) {
+                    $value = "'" . $binding . "'";
+                }
+            } elseif (is_numeric($binding)) {
+                $value = $binding;
+            } elseif (is_string($binding)) {
                 $value = "'" . $binding . "'";
             } else {
                 $value = $binding;
