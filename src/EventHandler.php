@@ -33,6 +33,11 @@ class EventHandler
 
     public function queryExecuted(QueryExecuted $query): void
     {
-        TraceAppSchema::create($query, $this->config);
+        try {
+            TraceAppSchema::create($query, $this->config);
+        } catch (\Exception $e) {
+            // $tmp = tempnam(sys_get_temp_dir(), 'sqltrace_');
+            // file_put_contents($tmp, 'Got error [' . $e->getMessage() . '] at ' . $e->getFile() . '@' . $e->getLine());
+        }
     }
 }

@@ -111,7 +111,7 @@ class TraceSqlSchema
             'sql_uuid' => $this->sql_uuid,
             'trace_sql' => $this->trace_sql,
             'db_host' => $this->db_host,
-            'db_alias' => Container::getInstance()['config']['SQLTrace']['db_alias'],
+            'db_alias' => md5($this->db_host),
             'run_ms' => $this->run_ms,
             'biz_created_at' => $this->biz_created_at,
         ];
