@@ -109,6 +109,7 @@ class TraceSqlSchema
         return [
             'app_uuid' => $this->app_uuid,
             'sql_uuid' => $this->sql_uuid,
+            'run_mode' => PHP_SAPI,
             'trace_sql' => $this->trace_sql,
             'db_host' => $this->db_host,
             'db_alias' => md5($this->db_host),
