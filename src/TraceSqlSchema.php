@@ -48,10 +48,10 @@ class TraceSqlSchema
                 } elseif (is_string($binding)) {
                     $value = "'" . $binding . "'";
                 }
-            } elseif (is_numeric($binding)) {
-                $value = $binding;
             } elseif (is_string($binding)) {
                 $value = "'" . $binding . "'";
+            } elseif (is_numeric($binding)) {
+                $value = $binding;
             } else {
                 $value = $binding;
             }
