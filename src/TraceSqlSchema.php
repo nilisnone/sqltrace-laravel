@@ -10,9 +10,13 @@ class TraceSqlSchema
     protected $app_uuid;
     protected $sql_uuid;
     protected $trace_sql;
+    protected $trace_sql_fingerprint;
+    protected $trace_sql_origins;
     protected $db_host;
     protected $run_ms;
     protected $biz_created_at;
+
+    public static array $globalStatistics = [];
 
     /**
      * @param string $app_uuid
@@ -40,6 +44,10 @@ class TraceSqlSchema
         $conf = $event->connection->getConfig();
         $this->db_host = sprintf("%s:%%s@tcp(%s:%s)/%s", $conf['username'], $conf['host'], $conf['port'], $conf['database']);
         $sql = $event->sql;
+        if (Container::getInstance()['config']['SQLTrace']['enable_statistic']) {
+            $this->trace_sql_fingerprint = md5($sql);
+            $this->statistics($this->trace_sql_fingerprint);
+        }
         foreach ($event->bindings as $binding) {
             if (is_object($binding)) {
                 $binding = (string)$binding;
@@ -63,9 +71,14 @@ class TraceSqlSchema
 
         if (Container::getInstance()['config']['SQLTrace']['enable_backtrace']) {
             $logback = $this->format_traces(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS));
-            TraceContextSchema::create($this->sql_uuid, $logback);
+            foreach ($logback as $item) {
+                $file = $item['file'] ?? '';
+                $file = explode('app', $file);
+                $this->trace_sql_origins .= ' app' . ($file[1] ?? '') . '@' . $item['line'] . ';';
+            }
         }
     }
+
     protected static function getDefaultContext(array &$context): void
     {
         $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 30);
@@ -86,11 +99,21 @@ class TraceSqlSchema
         }
     }
 
+    private function statistics(string $fingerprint)
+    {
+        if (!array_key_exists($fingerprint, static::$globalStatistics)) {
+            static::$globalStatistics[$fingerprint] = 1;
+        } else {
+            static::$globalStatistics[$fingerprint]++;
+        }
+    }
+
     protected function format_traces(array $traces): array
     {
         $format_traces = [];
+        $max = 5;
         while (!empty($traces)) {
-            $trace = array_pop($traces);
+            $trace = array_shift($traces);
             $skip_folder = 'vendor';
             if (isset($trace['file']) && strpos($trace['file'] ?? '', $skip_folder) === false) {
                 $format_trace = [
@@ -99,6 +122,9 @@ class TraceSqlSchema
                     'class' => $trace['class'] . $trace['type'] . $trace['function'] . '(..)'
                 ];
                 $format_traces[] = $format_trace;
+            }
+            if (count($format_traces) >= $max) {
+                break;
             }
         }
         return $format_traces;
@@ -111,6 +137,8 @@ class TraceSqlSchema
             'sql_uuid' => $this->sql_uuid,
             'run_mode' => PHP_SAPI,
             'trace_sql' => $this->trace_sql,
+            'trace_sql_fingerprint' => $this->trace_sql_fingerprint,
+            'trace_sql_origins' => $this->trace_sql_origins,
             'db_host' => $this->db_host,
             'db_alias' => md5($this->db_host),
             'run_ms' => $this->run_ms,
