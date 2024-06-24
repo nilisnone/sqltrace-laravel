@@ -48,6 +48,26 @@ class TraceAppSchema
         $this->request_post .= ' / ' . (file_get_contents('php://input') ?: json_encode($_POST));
     }
 
+    public function __destruct()
+    {
+        $this->flushStatistics();
+    }
+
+    public function flushStatistics()
+    {
+        $log = [];
+        foreach (TraceSqlSchema::$globalStatistics as $finger => $count) {
+            if ($count > 1) {
+                Log::getInstance()->info('trace-statistics', [
+                    'app_uuid' => $this->app_uuid,
+                    'trace_sql_fingerprint' => $finger,
+                    'dupl_count' => $count,
+                ]);
+            }
+        }
+        TraceSqlSchema::$globalStatistics = [];
+    }
+
     /**
      * @var TraceAppSchema|null $instance
      */
@@ -68,6 +88,9 @@ class TraceAppSchema
             $event
         );
         static::$instance->addTraceSql($sql->toArray());
+        if (count(static::$instance->trace_sql) > 100) {
+            static::$instance->flushStatistics();
+        }
 
         return static::$instance;
     }

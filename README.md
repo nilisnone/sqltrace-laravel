@@ -43,3 +43,10 @@ SOI_LOG_FILE=/tmp/sql.log
 ### SOI_UID_VARIABLE
 
 app_uuid 使用 $_SERVER 中的 key 值，默认空，随机生成
+
+# 版本
+
+2024.2
+
+- [x] 新增 SQL 指纹 (fingerprint) 标记，基于指纹可以统计 N+1 循环查询问题
+- [x] 增加 SQL 链路最多支持 5 层，解决在 SQL 下沉到模型的设计模式中，相同方法调用层级太多，没办法快速定位原始调用位置问题
