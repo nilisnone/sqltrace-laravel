@@ -21,5 +21,5 @@ return [
      * app_uuid使用$_SERVER中的变量
      */
     'app_uuid_variable' => env('SOI_UID_VARIABLE', ''),
-    'enable_statistic' => env('SOI_ENABLE_BACKTRACE', false),
+    'enable_statistic' => env('SOI_ENABLE_BACKTRACE', true),
 ];
