@@ -45,18 +45,7 @@ class TraceSqlSchema
         $this->db_host = sprintf("%s:%%s@tcp(%s:%s)/%s", $conf['username'], $conf['host'], $conf['port'], $conf['database']);
         $sql = $event->sql;
         if (Container::getInstance()['config']['SQLTrace']['enable_statistic']) {
-            // 搜索 ?, ? 包含多个 ? 替换成 ...
-            $formatSql = preg_replace_callback(
-                '/(\s*\?,{0,1}\s{0,1}\s*)+/',
-                function ($matches) {
-                    if (count($matches) > 0) {
-                        return ' ... ';
-                    }
-                    return '';
-                },
-                $sql
-            );
-            $this->trace_sql_fingerprint = md5($formatSql);
+            $this->trace_sql_fingerprint = (new SqlDigester())->doDigest($sql);
             $this->statistics($this->trace_sql_fingerprint);
         }
         foreach ($event->bindings as $binding) {
