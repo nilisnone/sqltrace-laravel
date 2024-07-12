@@ -39,7 +39,7 @@ class EventHandler
         try {
             TraceAppSchema::create($query, $this->config);
         } catch (\Exception $e) {
-             @file_put_contents(static::$errlog, 'Got error [' . $e->getMessage() . '] at ' . $e->getFile() . '@' . $e->getLine());
+            @file_put_contents(static::$errlog, date('Y-m-d H:i:s') . ' [' . $e->getMessage() . '] at ' . $e->getFile() . '@' . $e->getLine(), FILE_APPEND);
         }
     }
 }
