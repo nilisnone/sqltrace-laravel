@@ -26,7 +26,7 @@ class TraceSqlSchema
      */
     public static function create(string $app_uuid, QueryExecuted $event): TraceSqlSchema
     {
-        $trace_sql = new TraceSqlSchema($app_uuid, $event);
+        $trace_sql = new self($app_uuid, $event);
         $context = $trace_sql->toArray();
         static::getDefaultContext($context);
         Log::getInstance()->info('trace-sql', $context);
@@ -119,7 +119,7 @@ class TraceSqlSchema
                 $format_trace = [
                     'file' => $trace['file'] ?: '',
                     'line' => $trace['line'] ?? 0,
-                    'class' => $trace['class'] . $trace['type'] . $trace['function'] . '(..)'
+                    'class' => ($trace['class'] ?? '') . ($trace['type'] ?? '') . ($trace['function'] ?? '') . '(..)'
                 ];
                 $format_traces[] = $format_trace;
             }
