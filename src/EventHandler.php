@@ -14,6 +14,8 @@ class EventHandler
 
     private $config;
 
+    private static $errlog;
+
     /**
      * EventHandler constructor.
      *
@@ -24,6 +26,7 @@ class EventHandler
     {
         $this->events = $events;
         $this->config = $config;
+        static::$errlog = sys_get_temp_dir() . 'sqltrace_error.log';
     }
 
     public function subscribe(): void
@@ -36,8 +39,7 @@ class EventHandler
         try {
             TraceAppSchema::create($query, $this->config);
         } catch (\Exception $e) {
-            // $tmp = tempnam(sys_get_temp_dir(), 'sqltrace_');
-            // file_put_contents($tmp, 'Got error [' . $e->getMessage() . '] at ' . $e->getFile() . '@' . $e->getLine());
+             @file_put_contents(static::$errlog, 'Got error [' . $e->getMessage() . '] at ' . $e->getFile() . '@' . $e->getLine());
         }
     }
 }
