@@ -26,7 +26,7 @@ class EventHandler
     {
         $this->events = $events;
         $this->config = $config;
-        static::$errlog = sys_get_temp_dir() . 'sqltrace_error.log';
+        static::$errlog = sys_get_temp_dir() . '/sqltrace_error.log';
     }
 
     public function subscribe(): void
