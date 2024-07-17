@@ -50,7 +50,12 @@ class TraceSqlSchema
         }
         foreach ($event->bindings as $binding) {
             if (is_object($binding)) {
-                $binding = (string)$binding;
+                // hotfix: 查询直接使用 DateTime 当参数时的问题
+                if ($binding instanceof \DateTimeInterface) {
+                    $binding = $binding->format('Y-m-d H:i:s');
+                } else {
+                    $binding = (string)$binding;
+                }
                 if (is_numeric($binding)) {
                     $value = $binding;
                 } elseif (is_string($binding)) {
