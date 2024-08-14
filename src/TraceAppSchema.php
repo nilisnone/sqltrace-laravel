@@ -90,6 +90,7 @@ class TraceAppSchema
         static::$instance->addTraceSql($sql->toArray());
         if (count(static::$instance->trace_sql) > 100) {
             static::$instance->flushStatistics();
+            unset(static::$instance->trace_sql);
         }
 
         return static::$instance;

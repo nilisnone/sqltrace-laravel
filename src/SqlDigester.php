@@ -13,7 +13,7 @@ class SqlDigester
         $this->hasher = hash_init('sha256');
     }
 
-    private function normalize($sql, $redactLogEnable, $param1, $param2, $param3)
+    private function normalize($sql)
     {
         // 搜索 ?, ? 包含多个 ? 替换成 ...
         $this->buffer = preg_replace_callback(
@@ -41,7 +41,7 @@ class SqlDigester
 
     public function doDigest($sql)
     {
-        $this->normalize($sql, true, false, false, false);
+        $this->normalize($sql);
         hash_update($this->hasher, $this->buffer);
         $this->buffer = '';
         $digest = hash_final($this->hasher, true);

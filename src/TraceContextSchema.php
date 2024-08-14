@@ -2,7 +2,6 @@
 
 namespace SQLTrace;
 
-use phpDocumentor\Reflection\Types\True_;
 use SplFileObject;
 use Exception;
 
@@ -15,7 +14,7 @@ class TraceContextSchema
         $context = new self();
         foreach ($traces as $trace) {
             $source_code = $context->getSourceCode($trace['file'] ?? '', $trace['line'] ?? 0);
-            Log::getInstance()->info('trace-context',[
+            Log::getInstance()->info('trace-context', [
                 'sql_uuid' => $sql_uuid,
                 'file' => $trace['file'] ?? '',
                 'line' => $trace['line'] ?? '',
