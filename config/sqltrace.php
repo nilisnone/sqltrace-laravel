@@ -21,4 +21,9 @@ return [
      * app_uuid 使用 $_SERVER 中的变量
      */
     'app_uuid_variable' => env('SOI_UID_VARIABLE', ''),
+    /**
+     * sql_time_threshold, 当不等于 -1 时，sql 大于设置的阈值才会记录
+     */
+    'sql_time_threshold' => env('SOI_TIME_THRESHOLD', 0),
+    'sql_time_threshold_cli' => env('SOI_TIME_THRESHOLD_CLI', 0),
 ];

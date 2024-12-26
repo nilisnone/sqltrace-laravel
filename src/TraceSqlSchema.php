@@ -4,6 +4,7 @@ namespace SQLTrace;
 
 use DateTimeInterface;
 use Illuminate\Database\Events\QueryExecuted;
+use Ramsey\Uuid\Uuid;
 
 class TraceSqlSchema
 {
@@ -25,6 +26,7 @@ class TraceSqlSchema
         $this->sql_uuid = Utils::uuid();
         $conf = $event->connection->getConfig();
         $this->db_host = sprintf("mysql://%s@%s:%s/%s", $conf['username'], $conf['host'], $conf['port'], $conf['database']);
+        unset($conf);
         $sql = $event->sql;
         $this->trace_sql_fingerprint = (new SqlDigester())->doDigest($sql);
         foreach ($event->bindings as $binding) {
@@ -48,6 +50,7 @@ class TraceSqlSchema
         }
         $this->trace_sql = $sql;
         $this->run_ms = $event->time;
+        unset($value, $sql);
 
         if ($this->app->enableBacktrace()) {
             $logback = $this->format_traces(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 20));
@@ -63,7 +66,14 @@ class TraceSqlSchema
                     $this->trace_sql_origins .= $file[1] . '@' . ($item['line'] ?? 0) . ';';
                 }
             }
+            unset($logback);
         }
+    }
+
+    public function __destruct()
+    {
+        unset($this->app);
+        unset($this->sql_uuid, $this->trace_sql, $this->trace_sql_fingerprint, $this->trace_sql_origins, $this->db_host, $this->run_ms);
     }
 
     public function app(): ?TraceAppSchema
@@ -86,9 +96,10 @@ class TraceSqlSchema
     {
         $trace_sql = new self($app, $event);
         $context = $trace_sql->toArray();
-        Log::getInstance()->info('trace-sql', $context);
+        Log::getInstance($app)->info('trace-sql', $context);
         $app->addPushSql(json_encode($context, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
         $app->startPush();
+        unset($context);
         return $trace_sql;
     }
 
@@ -110,6 +121,7 @@ class TraceSqlSchema
                 break;
             }
         }
+        unset($traces);
         return $format_traces;
     }
 
@@ -125,6 +137,7 @@ class TraceSqlSchema
             'db_host' => $this->db_host,
             'db_alias' => md5($this->db_host),
             'run_ms' => $this->run_ms,
+            'created_at' => Utils::get_datetime_ms(),
         ];
     }
 }

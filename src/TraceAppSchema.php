@@ -16,13 +16,15 @@ class TraceAppSchema
     protected string $request_query = '';
     protected string $headers = '';
     protected string $request_post = '';
+    protected bool $compress = false;
     private array $config = [];
 
     protected static ?TraceAppSchema $app = null;
 
-    public int $last_push_timestamp = 0;
-    public array $push_sql = [];
-    public array $push_trace = [];
+    public int $last_push_sql_timestamp = 0;
+    public int $last_push_trace_timestamp = 0;
+    protected array $push_sql = [];
+    protected array $push_trace = [];
 
     public function __construct(array $config)
     {
@@ -50,21 +52,23 @@ class TraceAppSchema
         $this->headers = static::getHeader();
         $this->request_query = static::getQuery();
         $this->request_post = static::getPost();
+        $this->compress = extension_loaded('zlib');
     }
 
     public function __destruct()
     {
         $this->startPush();
+        $this->clearPushSqlTrace();
     }
 
     public function addPushSql(string $content)
     {
-        $this->push_sql[] = $content;
+        $this->push_sql[] = $this->compress ? gzcompress($content) : $content;
     }
 
     public function addPushTrace(string $content)
     {
-        $this->push_trace[] = $content;
+        $this->push_trace[] = $this->compress ? gzcompress($content) : $content;
     }
 
     public function clearPushSqlTrace()
@@ -80,22 +84,20 @@ class TraceAppSchema
 
     public function startPush()
     {
-        if (count($this->push_sql) < 60 || time() - $this->last_push_timestamp < 60) {
-            return;
+        if (count($this->push_sql) > 100 || time() - $this->last_push_sql_timestamp > 60) {
+            $sql = json_encode($this->push_sql, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?? '';
+            $sql and $this->pushRemote('sql', $sql, $this->compress);
+            unset($sql);
+            $this->push_sql = [];
+            $this->last_push_sql_timestamp = time();
         }
-        $sql = json_encode($this->push_sql, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?? '';
-        $trace = json_encode($this->push_trace, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?? '';
-        $compress = extension_loaded('zlib');
-        if ($compress) {
-            $sql = $sql ? gzcompress($sql) : '';
-            $trace = $trace ? gzcompress($trace) : '';
+        if (count($this->push_trace) > 100 || time() - $this->last_push_trace_timestamp > 60) {
+            $trace = json_encode($this->push_trace, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?? '';
+            $trace and $this->pushRemote('trace', $trace, $this->compress);
+            unset($trace);
+            $this->push_trace = [];
+            $this->last_push_trace_timestamp = time();
         }
-
-        $sql and $this->pushRemote('sql', $sql, $compress);
-        $trace and $this->pushRemote('trace', $trace, $compress);
-        $this->last_push_timestamp = time();
-        $this->push_trace = [];
-        $this->push_sql = [];
     }
 
     public function pushRemote(string $type, string $content, bool $compress)
@@ -128,11 +130,7 @@ class TraceAppSchema
         return file_get_contents('php://input') ?: ($_POST ? json_encode($_POST) : '');
     }
 
-    /**
-     * @param QueryExecuted $event
-     * @param array $config
-     */
-    public static function create(QueryExecuted $event, array $config)
+    public static function getInstance(array $config): ?TraceAppSchema
     {
         if (null === static::$app) {
             static::$app = new self($config);
@@ -140,8 +138,16 @@ class TraceAppSchema
             Log::getInstance(static::$app)->info('trace-app', $data);
             static::$app->pushRemote('app', json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), false);
         }
+        return static::$app;
+    }
 
-        TraceSqlSchema::create(static::$app, $event);
+    /**
+     * @param QueryExecuted $event
+     * @return TraceSqlSchema
+     */
+    public function create(QueryExecuted $event): TraceSqlSchema
+    {
+        return TraceSqlSchema::create($this, $event);
     }
 
     public function getConfig(): array
@@ -162,6 +168,14 @@ class TraceAppSchema
     public function getMaxContentLine()
     {
         return $this->config['max_context_line'] ?? 0;
+    }
+
+    public function getSQLTimeThreshold()
+    {
+        if ($this->run_mode === 'cli') {
+            return $this->config['sql_time_threshold_cli'] ?? -1;
+        }
+        return $this->config['sql_time_threshold'] ?? -1;
     }
 
 

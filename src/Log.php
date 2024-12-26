@@ -27,16 +27,12 @@ class Log
             $baseFile = ($path['dirname'] ?? '') . DIRECTORY_SEPARATOR . ($path['filename'] ?? '');
             $logfile = $baseFile . '.' . date('Ymd') . '.log';
             $traceFile = $baseFile . '.trace.' . date('Ymd') . '.log';
-            if (!$logfile) {
-                file_put_contents($logfile, '', FILE_APPEND);
-            }
+            @touch($logfile);
             if ($logfile) {
                 $this->log = @fopen($logfile, 'ab+');
             }
             if ($app->enableBacktrace()) {
-                if (!$traceFile) {
-                    file_put_contents($traceFile, '', FILE_APPEND);
-                }
+                @touch($traceFile);
                 if ($traceFile) {
                     $this->traceLog = @fopen($traceFile, 'ab+');
                 }
@@ -66,7 +62,6 @@ class Log
     {
         $context['msg'] = $msg;
         $context['_req_id'] = static::getReqId();
-        $context['_timestamp'] = date('Y-m-d H:i:s') . strstr(microtime(true), '.');
         if ($debug) {
             if ($this->traceLog) {
                 fwrite($this->traceLog, json_encode($context, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . PHP_EOL);
@@ -78,6 +73,8 @@ class Log
 
     public function __destruct()
     {
-        fclose($this->log);
+        $this->log && fclose($this->log);
+        $this->traceLog && fclose($this->log);
+        static::$instance = null;
     }
 }
