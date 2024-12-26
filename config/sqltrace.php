@@ -16,7 +16,7 @@ return [
     /**
      * 最大记录源码行数
      */
-    'max_context_line' => env('SOI_MAX_CONTEXT_LINE', 5),
+    'max_context_line' => env('SOI_MAX_CONTEXT_LINE', 20),
     /**
      * app_uuid 使用 $_SERVER 中的变量
      */

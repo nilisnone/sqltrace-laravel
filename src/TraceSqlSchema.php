@@ -7,16 +7,13 @@ use Illuminate\Database\Events\QueryExecuted;
 
 class TraceSqlSchema
 {
-    protected $app_uuid;
-    protected $sql_uuid;
-    protected $trace_sql;
-    protected $trace_sql_fingerprint;
-    protected $trace_sql_origins;
-    protected $db_host;
-    protected $run_ms;
-    protected $biz_created_at;
-
-    public static array $globalStatistics = [];
+    protected string $app_uuid = '';
+    protected string $sql_uuid = '';
+    protected string $trace_sql = '';
+    protected string $trace_sql_fingerprint = '';
+    protected string $trace_sql_origins = '';
+    protected string $db_host = '';
+    protected ?float $run_ms = 0.0;
 
     /**
      * @param string $app_uuid
@@ -28,7 +25,6 @@ class TraceSqlSchema
     {
         $trace_sql = new self($app_uuid, $event);
         $context = $trace_sql->toArray();
-        static::getDefaultContext($context);
         Log::getInstance()->info('trace-sql', $context);
         return $trace_sql;
     }
@@ -42,12 +38,11 @@ class TraceSqlSchema
         $this->app_uuid = $app_uuid;
         $this->sql_uuid = Utils::uuid();
         $conf = $event->connection->getConfig();
-        $this->db_host = sprintf("%s:%%s@tcp(%s:%s)/%s", $conf['username'], $conf['host'], $conf['port'], $conf['database']);
+        $this->db_host = sprintf("mysql://%s@%s:%s/%s", $conf['username'], $conf['host'], $conf['port'], $conf['database']);
         $sql = $event->sql;
-        if (Container::getInstance()['config']['SQLTrace']['enable_statistic']) {
-            $this->trace_sql_fingerprint = (new SqlDigester())->doDigest($sql);
-        }
+        $this->trace_sql_fingerprint = (new SqlDigester())->doDigest($sql);
         foreach ($event->bindings as $binding) {
+            $value = $binding;
             if (is_object($binding)) {
                 // hotfix: 查询直接使用 DateTime 当参数时的问题
                 if ($binding instanceof \DateTimeInterface) {
@@ -62,46 +57,29 @@ class TraceSqlSchema
                 }
             } elseif (is_string($binding)) {
                 $value = "'" . $binding . "'";
-            } elseif (is_numeric($binding)) {
-                $value = $binding;
-            } else {
-                $value = $binding;
             }
             $sql = preg_replace('/\?/', $value, $sql, 1);
         }
         $this->trace_sql = $sql;
         $this->run_ms = $event->time;
-        $this->biz_created_at = Utils::get_datetime_ms();
 
         if (Container::getInstance()['config']['SQLTrace']['enable_backtrace']) {
-            $logback = $this->format_traces(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS));
+            $logback = $this->format_traces(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 20));
+            $appName = ($_SERVER['APP_NAME'] ?? '') . '/';
+            TraceContextSchema::create($this->sql_uuid, $logback);
             foreach ($logback as $item) {
                 $file = $item['file'] ?? '';
-                $file = explode('app', $file);
-                $this->trace_sql_origins .= ' app' . ($file[1] ?? '') . '@' . $item['line'] . ';';
+                if (strpos($file, $appName) === false) {
+                    continue;
+                }
+                $file = explode($appName, $file);
+                if (!empty($file[1])) {
+                    $this->trace_sql_origins .=$file[1] . '@' . ($item['line'] ?? 0) . ';';
+                }
             }
         }
     }
 
-    protected static function getDefaultContext(array &$context): void
-    {
-        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 30);
-        foreach ($trace as $v) {
-            $file = $v['file'] ?? '';
-            if (!$file) {
-                continue;
-            }
-            if (strpos($file, 'vendor') !== false) {
-                continue;
-            }
-            $context['call_sql_position'] = sprintf(
-                '%s@%d',
-                $v['file'] ?? '',
-                $v['line'] ?? ''
-            );
-            return;
-        }
-    }
 
     protected function format_traces(array $traces): array
     {
@@ -109,8 +87,7 @@ class TraceSqlSchema
         $max = 5;
         while (!empty($traces)) {
             $trace = array_shift($traces);
-            $skip_folder = 'vendor';
-            if (isset($trace['file']) && strpos($trace['file'] ?? '', $skip_folder) === false) {
+            if (isset($trace['file']) && strpos($trace['file'], 'vendor') === false && strpos($trace['file'], 'sqltrace-laravel') === false) {
                 $format_trace = [
                     'file' => $trace['file'] ?: '',
                     'line' => $trace['line'] ?? 0,
@@ -137,7 +114,6 @@ class TraceSqlSchema
             'db_host' => $this->db_host,
             'db_alias' => md5($this->db_host),
             'run_ms' => $this->run_ms,
-            'biz_created_at' => $this->biz_created_at,
         ];
     }
 }

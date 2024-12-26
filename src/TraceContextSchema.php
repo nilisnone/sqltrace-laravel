@@ -19,7 +19,9 @@ class TraceContextSchema
                 'file' => $trace['file'] ?? '',
                 'line' => $trace['line'] ?? '',
                 'class' => $trace['class'] ?? '',
-                'context_line' => $source_code['context_line'],
+                'context_before' => $source_code['context_before'],
+                'context_current' => $source_code['context_current'],
+                'context_after' => $source_code['context_after'],
             ], true);
         }
 
@@ -35,9 +37,9 @@ class TraceContextSchema
         $maxLinesToFetch = $config['max_context_line'];
 
         $frame = [
-            'pre_context' => [],
-            'context_line' => '',
-            'post_context' => [],
+            'context_before' => [],
+            'context_current' => [],
+            'context_after' => [],
         ];
         if (!$maxLinesToFetch) {
             return $frame;
@@ -55,11 +57,11 @@ class TraceContextSchema
                 $currLine = str_replace(["\r\n", "\r", "\n"], "", $currLine);
 
                 if ($currLineNum == $line) {
-                    $frame['context_line'] = $currLine;
+                    $frame['context_current'][$currLineNum] = $currLine;
                 } elseif ($currLineNum < $line) {
-                    $frame['pre_context'][] = $currLine;
+                    $frame['context_before'][$currLineNum] = $currLine;
                 } elseif ($currLineNum > $line) {
-                    $frame['post_context'][] = $currLine;
+                    $frame['context_after'][$currLineNum] = $currLine;
                 }
 
                 ++$currLineNum;

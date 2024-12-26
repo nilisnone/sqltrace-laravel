@@ -14,11 +14,12 @@ class TraceAppSchema
     protected string $referer = '';
     protected string $request_uri = '';
     protected string $request_query = '';
+    protected string $headers = '';
     protected string $request_post = '';
 
-    protected array $trace_sql = [];
-
     private array $config = [];
+
+    protected static ?TraceAppSchema $instance = null;
 
     public function __construct(array $config)
     {
@@ -43,12 +44,32 @@ class TraceAppSchema
             $this->request_uri = sprintf("%s %s", $_SERVER['REQUEST_METHOD'] ?? '', $_uri);
             $this->referer = $_SERVER['HTTP_REFERER'] ?? '';
         }
-        $this->request_query = json_encode($_GET);
-        $this->request_post = 'content-type: ' . ($_SERVER['CONTENT_TYPE'] ?? '');
-        $this->request_post .= ' / ' . (file_get_contents('php://input') ?: json_encode($_POST));
+        $this->headers = static::getHeader();
+        $this->request_query = static::getQuery();
+        $this->request_post = static::getPost();
     }
 
-    protected static ?TraceAppSchema $instance = null;
+    public static function getQuery()
+    {
+        if ($_GET) {
+            return json_encode($_GET, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        }
+        return '';
+    }
+
+    public static function getHeader()
+    {
+        return json_encode([
+            'request_time' => $_SERVER['REQUEST_TIME'] ?? 0,
+            'php_version' => $_SERVER['PHP_VERSION'] ?? '',
+            'content_type' => $_SERVER['CONTENT_TYPE'] ?? '',
+        ]);
+    }
+
+    public static function getPost()
+    {
+        return file_get_contents('php://input') ?: ($_POST ? json_encode($_POST) : '');
+    }
 
     /**
      * @param QueryExecuted $event
@@ -61,21 +82,8 @@ class TraceAppSchema
             static::$instance = new TraceAppSchema($config);
             Log::getInstance()->info('trace-app', static::$instance->toArray());
         }
-        $sql = TraceSqlSchema::create(
-            static::$instance->app_uuid,
-            $event
-        );
-        static::$instance->addTraceSql($sql->toArray());
-        if (count(static::$instance->trace_sql) > 100) {
-            unset(static::$instance->trace_sql);
-        }
-
+        TraceSqlSchema::create(static::$instance->app_uuid, $event);
         return static::$instance;
-    }
-
-    protected function addTraceSql(array $trace_sql): void
-    {
-        $this->trace_sql[] = $trace_sql;
     }
 
     public function toArray(): array
@@ -88,6 +96,7 @@ class TraceAppSchema
             'pid' => $this->pid,
             'referer' => $this->referer,
             'request_uri' => $this->request_uri,
+            'header' => $this->headers,
             'request_query' => $this->request_query,
             'request_post' => $this->request_post,
         ];
