@@ -75,7 +75,7 @@ class TraceContextSchema
                 }
 
                 ++$currLineNum;
-                if ($currLineNum > $line + $maxLinesToFetch) {
+                if ($currLineNum > $line + $maxContentLine) {
                     break;
                 }
 
