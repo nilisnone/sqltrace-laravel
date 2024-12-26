@@ -70,10 +70,10 @@ class Log
         $context['_timestamp'] = date('Y-m-d H:i:s') . strstr(microtime(true), '.');
         if ($debug) {
             if ($this->traceLog) {
-                fwrite($this->traceLog, json_encode($context) . PHP_EOL);
+                fwrite($this->traceLog, json_encode($context, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . PHP_EOL);
             }
         } else if ($this->log) {
-            fwrite($this->log, json_encode($context) . PHP_EOL);
+            fwrite($this->log, json_encode($context, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . PHP_EOL);
         }
     }
 
