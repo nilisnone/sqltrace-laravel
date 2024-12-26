@@ -12,7 +12,7 @@ class ServiceProvider extends IlluminateServiceProvider
      *
      * @var string
      */
-    public static $abstract = 'SQLTrace';
+    public static string $abstract = 'SQLTrace';
 
     /**
      * @throws BindingResolutionException

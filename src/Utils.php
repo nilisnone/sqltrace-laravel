@@ -4,7 +4,7 @@ namespace SQLTrace;
 
 class Utils
 {
-    protected static $g_uuid;
+    protected static string $g_uuid = '';
 
     /**
      * 全局UUID
@@ -14,11 +14,7 @@ class Utils
     public static function static_uuid(): string
     {
         if (!static::$g_uuid) {
-            static::$g_uuid = $_SERVER['HTTP_TRACE_ID'] ??
-                (
-                    $_GET['trace_id'] ??
-                    static::uuid()
-                );
+            static::$g_uuid = $_SERVER['HTTP_TRACE_ID'] ?? ($_GET['trace_id'] ?? static::uuid());
         }
         return static::$g_uuid;
     }
@@ -46,7 +42,8 @@ class Utils
      */
     public static function get_datetime_ms(): string
     {
-        return date('Y-m-d') . 'T' . date('H:i:s.') . str_pad((int)(100000 * (microtime(true) - time())), 6, 0, STR_PAD_LEFT);
+        $ms = str_pad((int)(100000 * (microtime(true) - time())), 6, 0, STR_PAD_LEFT);
+        return date('Y-m-d') . 'T' . date('H:i:s.') . $ms;
     }
 
 }

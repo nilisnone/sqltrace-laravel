@@ -6,19 +6,19 @@ use Illuminate\Database\Events\QueryExecuted;
 
 class TraceAppSchema
 {
-    protected $app_uuid;
-    protected $app_name;
-    protected $run_host;
-    protected $run_mode;
-    protected $pid;
-    protected $referer;
-    protected $request_uri;
-    protected $request_query;
-    protected $request_post;
+    protected string $app_uuid = '';
+    protected string $app_name = '';
+    protected string $run_host = '';
+    protected string $run_mode = '';
+    protected int $pid = 0;
+    protected string $referer = '';
+    protected string $request_uri = '';
+    protected string $request_query = '';
+    protected string $request_post = '';
 
-    protected $trace_sql = [];
+    protected array $trace_sql = [];
 
-    private $config;
+    private array $config = [];
 
     public function __construct(array $config)
     {
@@ -48,33 +48,11 @@ class TraceAppSchema
         $this->request_post .= ' / ' . (file_get_contents('php://input') ?: json_encode($_POST));
     }
 
-    public function __destruct()
-    {
-        $this->flushStatistics();
-    }
-
-    public function flushStatistics()
-    {
-        $log = [];
-        foreach (TraceSqlSchema::$globalStatistics as $finger => $count) {
-            if ($count > 1) {
-                Log::getInstance()->info('trace-statistics', [
-                    'app_uuid' => $this->app_uuid,
-                    'trace_sql_fingerprint' => $finger,
-                    'dupl_count' => $count,
-                ]);
-            }
-        }
-        TraceSqlSchema::$globalStatistics = [];
-    }
-
-    /**
-     * @var TraceAppSchema|null $instance
-     */
-    protected static $instance;
+    protected static ?TraceAppSchema $instance = null;
 
     /**
      * @param QueryExecuted $event
+     * @param array $config
      * @return TraceAppSchema|null
      */
     public static function create(QueryExecuted $event, array $config): ?TraceAppSchema
@@ -89,7 +67,6 @@ class TraceAppSchema
         );
         static::$instance->addTraceSql($sql->toArray());
         if (count(static::$instance->trace_sql) > 100) {
-            static::$instance->flushStatistics();
             unset(static::$instance->trace_sql);
         }
 

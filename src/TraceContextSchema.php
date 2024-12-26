@@ -7,7 +7,7 @@ use Exception;
 
 class TraceContextSchema
 {
-    protected $context = [];
+    protected array $context = [];
 
     public static function create(string $sql_uuid, array $traces): TraceContextSchema
     {
@@ -26,7 +26,7 @@ class TraceContextSchema
         return $context;
     }
 
-    protected function getSourceCode(string $path, int $lineNumber): array
+    protected function getSourceCode(string $path, int $line): array
     {
         if (@!is_readable($path) || !is_file($path)) {
             return [];
@@ -43,27 +43,27 @@ class TraceContextSchema
             return $frame;
         }
 
-        $target = max(0, ($lineNumber - ($maxLinesToFetch + 1)));
-        $currentLineNumber = $target + 1;
+        $target = max(0, ($line - ($maxLinesToFetch + 1)));
+        $currLineNum = $target + 1;
 
         try {
             $file = new SplFileObject($path);
             $file->seek($target);
 
             while (!$file->eof()) {
-                $line = $file->current();
-                $line = str_replace(["\r\n", "\r", "\n"], "", $line);
+                $currLine = $file->current();
+                $currLine = str_replace(["\r\n", "\r", "\n"], "", $currLine);
 
-                if ($currentLineNumber === $lineNumber) {
-                    $frame['context_line'] = $line;
-                } elseif ($currentLineNumber < $lineNumber) {
-                    $frame['pre_context'][] = $line;
-                } elseif ($currentLineNumber > $lineNumber) {
-                    $frame['post_context'][] = $line;
+                if ($currLineNum == $line) {
+                    $frame['context_line'] = $currLine;
+                } elseif ($currLineNum < $line) {
+                    $frame['pre_context'][] = $currLine;
+                } elseif ($currLineNum > $line) {
+                    $frame['post_context'][] = $currLine;
                 }
 
-                ++$currentLineNumber;
-                if ($currentLineNumber > $lineNumber + $maxLinesToFetch) {
+                ++$currLineNum;
+                if ($currLineNum > $line + $maxLinesToFetch) {
                     break;
                 }
 

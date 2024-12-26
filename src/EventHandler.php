@@ -7,14 +7,11 @@ use Illuminate\Database\Events\QueryExecuted;
 
 class EventHandler
 {
-    /**
-     * @var Dispatcher
-     */
-    private $events;
+    private ?Dispatcher $events = null;
 
-    private $config;
+    private array $config = [];
 
-    private static $errlog;
+    private static string $errLog = '';
 
     /**
      * EventHandler constructor.
@@ -26,7 +23,7 @@ class EventHandler
     {
         $this->events = $events;
         $this->config = $config;
-        static::$errlog = sys_get_temp_dir() . '/sqltrace_error.log';
+        static::$errLog = sys_get_temp_dir() . '/sqltrace-error.log';
     }
 
     public function subscribe(): void
@@ -39,7 +36,7 @@ class EventHandler
         try {
             TraceAppSchema::create($query, $this->config);
         } catch (\Exception $e) {
-            @file_put_contents(static::$errlog, date('Y-m-d H:i:s') . ' [' . $e->getMessage() . '] at ' . $e->getFile() . '@' . $e->getLine(), FILE_APPEND);
+            @file_put_contents(static::$errLog, date('Y-m-d H:i:s') . ' [' . $e->getMessage() . '] at ' . $e->getFile() . '@' . $e->getLine(), FILE_APPEND);
         }
     }
 }

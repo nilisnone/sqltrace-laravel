@@ -46,7 +46,6 @@ class TraceSqlSchema
         $sql = $event->sql;
         if (Container::getInstance()['config']['SQLTrace']['enable_statistic']) {
             $this->trace_sql_fingerprint = (new SqlDigester())->doDigest($sql);
-            $this->statistics($this->trace_sql_fingerprint);
         }
         foreach ($event->bindings as $binding) {
             if (is_object($binding)) {
@@ -101,15 +100,6 @@ class TraceSqlSchema
                 $v['line'] ?? ''
             );
             return;
-        }
-    }
-
-    private function statistics(string $fingerprint)
-    {
-        if (!array_key_exists($fingerprint, static::$globalStatistics)) {
-            static::$globalStatistics[$fingerprint] = 1;
-        } else {
-            static::$globalStatistics[$fingerprint]++;
         }
     }
 

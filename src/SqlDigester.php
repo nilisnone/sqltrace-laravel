@@ -1,16 +1,16 @@
-<?php
+<?php /** @noinspection RegExpSimplifiable */
 
 namespace SQLTrace;
 
 class SqlDigester
 {
-    private $buffer;
-    private $hasher;
+    private string $buffer = '';
+    private ?\HashContext $hash = null;
 
     public function __construct()
     {
         $this->buffer = '';
-        $this->hasher = hash_init('sha256');
+        $this->hash = hash_init('sha256');
     }
 
     private function normalize($sql)
@@ -34,18 +34,16 @@ class SqlDigester
         // 使用正则表达式匹配并替换 "limit 1" 为 "limit ?"
         $pattern = '/\blimit\s+\d+\b/i';
         $replacement = 'limit ?';
-        $newSql = preg_replace($pattern, $replacement, $sql);
-
-        return $newSql;
+        return preg_replace($pattern, $replacement, $sql);
     }
 
-    public function doDigest($sql)
+    public function doDigest($sql): string
     {
         $this->normalize($sql);
-        hash_update($this->hasher, $this->buffer);
+        hash_update($this->hash, $this->buffer);
         $this->buffer = '';
-        $digest = hash_final($this->hasher, true);
-        $this->hasher = hash_init('sha256');
+        $digest = hash_final($this->hash, true);
+        $this->hash = hash_init('sha256');
         return bin2hex($digest);
     }
 }

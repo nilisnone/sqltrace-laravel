@@ -6,10 +6,10 @@ use Illuminate\Container\Container;
 
 class Log
 {
-    protected static $instance;
+    protected static ?Log $instance = null;
     public $log;
     public $traceLog;
-    protected static $reqId;
+    protected static string $reqId = '';
 
     public static function getInstance(): Log
     {
