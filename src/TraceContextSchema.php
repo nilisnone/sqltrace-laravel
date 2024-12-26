@@ -2,27 +2,37 @@
 
 namespace SQLTrace;
 
-use SplFileObject;
 use Exception;
+use SplFileObject;
 
 class TraceContextSchema
 {
+    protected ?TraceSqlSchema $sql = null;
+
     protected array $context = [];
 
-    public static function create(string $sql_uuid, array $traces): TraceContextSchema
+    public function __construct(TraceSqlSchema $sql)
     {
-        $context = new self();
+        $this->sql = $sql;
+    }
+
+    public static function create(TraceSqlSchema $sql, array $traces): TraceContextSchema
+    {
+        $context = new self($sql);
         foreach ($traces as $trace) {
             $source_code = $context->getSourceCode($trace['file'] ?? '', $trace['line'] ?? 0);
-            Log::getInstance()->info('trace-context', [
-                'sql_uuid' => $sql_uuid,
+            $traceContext = [
+                'sql_uuid' => $sql->getSqlUUID(),
                 'file' => $trace['file'] ?? '',
                 'line' => $trace['line'] ?? '',
                 'class' => $trace['class'] ?? '',
                 'context_before' => $source_code['context_before'],
                 'context_current' => $source_code['context_current'],
                 'context_after' => $source_code['context_after'],
-            ], true);
+            ];
+            Log::getInstance()->info('trace-context', $traceContext, true);
+            $sql->app()->addPushTrace(json_encode($traceContext, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+            $sql->app()->startPush();
         }
 
         return $context;
@@ -33,8 +43,7 @@ class TraceContextSchema
         if (@!is_readable($path) || !is_file($path)) {
             return [];
         }
-        $config = app()['config']['SQLTrace'];
-        $maxLinesToFetch = $config['max_context_line'];
+        $maxLinesToFetch = $this->sql->app()->getMaxContentLine();
 
         $frame = [
             'context_before' => [],

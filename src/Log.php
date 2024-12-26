@@ -11,18 +11,17 @@ class Log
     public $traceLog;
     protected static string $reqId = '';
 
-    public static function getInstance(): Log
+    public static function getInstance(?TraceAppSchema $app = null): Log
     {
         if (!static::$instance) {
-            static::$instance = new self();
+            static::$instance = new self($app);
         }
         return static::$instance;
     }
 
-    public function __construct()
+    public function __construct(TraceAppSchema $app)
     {
-        $logfile = Container::getInstance()['config']['SQLTrace']['log_file'];
-        $enableTrace = Container::getInstance()['config']['SQLTrace']['enable_backtrace'];
+        $logfile = $app->getLogFile();
         if ($logfile) {
             $path = pathinfo($logfile);
             $baseFile = ($path['dirname'] ?? '') . DIRECTORY_SEPARATOR . ($path['filename'] ?? '');
@@ -34,7 +33,7 @@ class Log
             if ($logfile) {
                 $this->log = @fopen($logfile, 'ab+');
             }
-            if ($enableTrace) {
+            if ($app->enableBacktrace()) {
                 if (!$traceFile) {
                     file_put_contents($traceFile, '', FILE_APPEND);
                 }

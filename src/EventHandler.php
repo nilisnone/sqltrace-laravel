@@ -2,6 +2,7 @@
 
 namespace SQLTrace;
 
+use Exception;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Events\QueryExecuted;
 
@@ -35,7 +36,7 @@ class EventHandler
     {
         try {
             TraceAppSchema::create($query, $this->config);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             @file_put_contents(
                 static::$errLog,
                 date('Y-m-d H:i:s') . ' [' . $e->getMessage() . '] at ' . $e->getFile() . '@' . $e->getLine() . PHP_EOL,

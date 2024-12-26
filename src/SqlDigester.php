@@ -2,10 +2,12 @@
 
 namespace SQLTrace;
 
+use HashContext;
+
 class SqlDigester
 {
     private string $buffer = '';
-    private ?\HashContext $hash = null;
+    private ?HashContext $hash = null;
 
     public function __construct()
     {

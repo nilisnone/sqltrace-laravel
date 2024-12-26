@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpComposerExtensionStubsInspection */
 
 namespace SQLTrace;
 
@@ -16,10 +16,13 @@ class TraceAppSchema
     protected string $request_query = '';
     protected string $headers = '';
     protected string $request_post = '';
-
     private array $config = [];
 
-    protected static ?TraceAppSchema $instance = null;
+    protected static ?TraceAppSchema $app = null;
+
+    public int $last_push_timestamp = 0;
+    public array $push_sql = [];
+    public array $push_trace = [];
 
     public function __construct(array $config)
     {
@@ -49,6 +52,60 @@ class TraceAppSchema
         $this->request_post = static::getPost();
     }
 
+    public function __destruct()
+    {
+        $this->startPush();
+    }
+
+    public function addPushSql(string $content)
+    {
+        $this->push_sql[] = $content;
+    }
+
+    public function addPushTrace(string $content)
+    {
+        $this->push_trace[] = $content;
+    }
+
+    public function clearPushSqlTrace()
+    {
+        $this->push_sql = [];
+        $this->push_trace = [];
+    }
+
+    public function getAppUUID(): string
+    {
+        return $this->app_uuid;
+    }
+
+    public function startPush()
+    {
+        if (count($this->push_sql) < 60 || time() - $this->last_push_timestamp < 60) {
+            return;
+        }
+        $sql = json_encode($this->push_sql, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?? '';
+        $trace = json_encode($this->push_trace, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?? '';
+        $compress = extension_loaded('zlib');
+        if ($compress) {
+            $sql = $sql ? gzcompress($sql) : '';
+            $trace = $trace ? gzcompress($trace) : '';
+        }
+
+        $sql and $this->pushRemote('sql', $sql, $compress);
+        $trace and $this->pushRemote('trace', $trace, $compress);
+        $this->last_push_timestamp = time();
+        $this->push_trace = [];
+        $this->push_sql = [];
+    }
+
+    public function pushRemote(string $type, string $content, bool $compress)
+    {
+        if (!in_array($type, ['app', 'sql', 'trace'], true) || !$content) {
+            return;
+        }
+        // todo send to remote
+    }
+
     public static function getQuery()
     {
         if ($_GET) {
@@ -74,17 +131,39 @@ class TraceAppSchema
     /**
      * @param QueryExecuted $event
      * @param array $config
-     * @return TraceAppSchema|null
      */
-    public static function create(QueryExecuted $event, array $config): ?TraceAppSchema
+    public static function create(QueryExecuted $event, array $config)
     {
-        if (null === static::$instance) {
-            static::$instance = new TraceAppSchema($config);
-            Log::getInstance()->info('trace-app', static::$instance->toArray());
+        if (null === static::$app) {
+            static::$app = new self($config);
+            $data = static::$app->toArray();
+            Log::getInstance(static::$app)->info('trace-app', $data);
+            static::$app->pushRemote('app', json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), false);
         }
-        TraceSqlSchema::create(static::$instance->app_uuid, $event);
-        return static::$instance;
+
+        TraceSqlSchema::create(static::$app, $event);
     }
+
+    public function getConfig(): array
+    {
+        return $this->config;
+    }
+
+    public function enableBacktrace()
+    {
+        return $this->config['enable_backtrace'] ?? false;
+    }
+
+    public function getLogFile()
+    {
+        return $this->config['log_file'] ?? '';
+    }
+
+    public function getMaxContentLine()
+    {
+        return $this->config['max_context_line'] ?? 0;
+    }
+
 
     public function toArray(): array
     {

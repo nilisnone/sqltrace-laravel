@@ -17,14 +17,10 @@ php artisan package:discover
 
 ## 使用
 
-1. 编辑 .env
-
 ```
 SOI_ENABLE=true
 SOI_LOG_FILE=/tmp/sql.log
 ```
-
-2. 其他参数
 
 ### SOI_ENABLE_BACKTRACE
 

@@ -2,12 +2,12 @@
 
 namespace SQLTrace;
 
-use Illuminate\Container\Container;
+use DateTimeInterface;
 use Illuminate\Database\Events\QueryExecuted;
 
 class TraceSqlSchema
 {
-    protected string $app_uuid = '';
+    protected ?TraceAppSchema $app = null;
     protected string $sql_uuid = '';
     protected string $trace_sql = '';
     protected string $trace_sql_fingerprint = '';
@@ -16,26 +16,12 @@ class TraceSqlSchema
     protected ?float $run_ms = 0.0;
 
     /**
-     * @param string $app_uuid
-     * @param QueryExecuted $event
-     *
-     * @return TraceSqlSchema
-     */
-    public static function create(string $app_uuid, QueryExecuted $event): TraceSqlSchema
-    {
-        $trace_sql = new self($app_uuid, $event);
-        $context = $trace_sql->toArray();
-        Log::getInstance()->info('trace-sql', $context);
-        return $trace_sql;
-    }
-
-    /**
-     * @param string $app_uuid
+     * @param TraceAppSchema $app
      * @param QueryExecuted $event
      */
-    public function __construct(string $app_uuid, QueryExecuted $event)
+    public function __construct(TraceAppSchema $app, QueryExecuted $event)
     {
-        $this->app_uuid = $app_uuid;
+        $this->app = $app;
         $this->sql_uuid = Utils::uuid();
         $conf = $event->connection->getConfig();
         $this->db_host = sprintf("mysql://%s@%s:%s/%s", $conf['username'], $conf['host'], $conf['port'], $conf['database']);
@@ -45,7 +31,7 @@ class TraceSqlSchema
             $value = $binding;
             if (is_object($binding)) {
                 // hotfix: 查询直接使用 DateTime 当参数时的问题
-                if ($binding instanceof \DateTimeInterface) {
+                if ($binding instanceof DateTimeInterface) {
                     $binding = $binding->format('Y-m-d H:i:s');
                 } else {
                     $binding = (string)$binding;
@@ -63,10 +49,10 @@ class TraceSqlSchema
         $this->trace_sql = $sql;
         $this->run_ms = $event->time;
 
-        if (Container::getInstance()['config']['SQLTrace']['enable_backtrace']) {
+        if ($this->app->enableBacktrace()) {
             $logback = $this->format_traces(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 20));
             $appName = ($_SERVER['APP_NAME'] ?? '') . '/';
-            TraceContextSchema::create($this->sql_uuid, $logback);
+            TraceContextSchema::create($this, $logback);
             foreach ($logback as $item) {
                 $file = $item['file'] ?? '';
                 if (strpos($file, $appName) === false) {
@@ -74,12 +60,37 @@ class TraceSqlSchema
                 }
                 $file = explode($appName, $file);
                 if (!empty($file[1])) {
-                    $this->trace_sql_origins .=$file[1] . '@' . ($item['line'] ?? 0) . ';';
+                    $this->trace_sql_origins .= $file[1] . '@' . ($item['line'] ?? 0) . ';';
                 }
             }
         }
     }
 
+    public function app(): ?TraceAppSchema
+    {
+        return $this->app;
+    }
+
+    public function getSqlUUID(): string
+    {
+        return $this->sql_uuid;
+    }
+
+    /**
+     * @param TraceAppSchema $app
+     * @param QueryExecuted $event
+     *
+     * @return TraceSqlSchema
+     */
+    public static function create(TraceAppSchema $app, QueryExecuted $event): TraceSqlSchema
+    {
+        $trace_sql = new self($app, $event);
+        $context = $trace_sql->toArray();
+        Log::getInstance()->info('trace-sql', $context);
+        $app->addPushSql(json_encode($context, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        $app->startPush();
+        return $trace_sql;
+    }
 
     protected function format_traces(array $traces): array
     {
@@ -105,7 +116,7 @@ class TraceSqlSchema
     public function toArray(): array
     {
         return [
-            'app_uuid' => $this->app_uuid,
+            'app_uuid' => $this->app->getAppUUID(),
             'sql_uuid' => $this->sql_uuid,
             'run_mode' => PHP_SAPI,
             'trace_sql' => $this->trace_sql,
