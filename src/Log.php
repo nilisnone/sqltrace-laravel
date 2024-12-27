@@ -61,7 +61,7 @@ class Log
     public function info(string $msg, array $context = [], bool $debug = false): void
     {
         $context['msg'] = $msg;
-        $context['_req_id'] = static::getReqId();
+        $context['req_id'] = static::getReqId();
         if ($debug) {
             if ($this->traceLog) {
                 fwrite($this->traceLog, json_encode($context, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . PHP_EOL);
